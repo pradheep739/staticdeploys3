@@ -1,23 +1,28 @@
-name: Upload Website
-
+# Sample workflow to access AWS resources when workflow is tied to branch
+# The workflow Creates static website using aws s3
+name: AWS example workflow
 on:
-  push:
-    branches:
-    - master
-
+  push
+env:
+  BUCKET_NAME : "staticdeploys3"
+  AWS_REGION : "ap-south-1"
+# permission can be added at job level or workflow level
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
 jobs:
-  deploy:
+  S3PackageUpload:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-south-1
-
-    - name: Deploy static site to S3 bucket
-      run: aws s3 sync ./public/ s3://staticdeploys3 --delete
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::932160946191:role/aws-github-role
+          role-session-name: samplerolesession
+          aws-region: ${{ env.AWS_REGION }}
+      # Upload a file to AWS s3
+      - name:  Copy index.html to s3
+        run: |
+          aws s3 cp * s3://${{ env.BUCKET_NAME }}/
